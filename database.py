@@ -1,26 +1,21 @@
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from models import ScrapedData, Base
 
-# Create SQLite database
-DATABASE_URL = "sqlite:///scraper_data.db"
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine("sqlite:///scraper.db")
+Session = sessionmaker(bind=engine)
+session = Session()
 
-# Create a Base class
-Base = declarative_base()
-
-# Define a table/model
-class ScrapedData(Base):
-    __tablename__ = "scraped_data"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String, nullable=False)
-    url = Column(String, nullable=False)
-
-# Create a session
-SessionLocal = sessionmaker(bind=engine)
-session = SessionLocal()
-
-# Create database tables
-Base.metadata.create_all(engine)
-
-print("✅ Database and tables created successfully!")
+def create_db():
+    """Create tables and insert sample data only if the table is empty."""
+    Base.metadata.create_all(engine)
+    if not session.query(ScrapedData).first():  # Check if the table is empty
+        sample_data = [
+            ScrapedData(title="Example Domain", url="https://example.com"),
+            ScrapedData(title="Google", url="https://www.google.com"),
+        ]
+        session.add_all(sample_data)
+        session.commit()
+        print("✅ Sample data inserted successfully!")
+    else:
+        print("⚠️ Sample data already exists, skipping insertion.")
